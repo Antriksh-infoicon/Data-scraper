@@ -1,0 +1,20 @@
+{
+  "name": "natuerlich-fuer-uns-scraper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "axios": "^1.20.0",
+    "cheerio": "^1.2.0",
+    "csv-writer": "^1.6.0",
+    "fast-xml-parser": "^5.11.1",
+    "xlsx": "^0.18.5"
+  }
+}

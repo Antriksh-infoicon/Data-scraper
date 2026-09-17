@@ -1,0 +1,15 @@
+HTTP/2 200 
+last-modified: Wed, 16 Sep 2026 10:37:02 GMT
+etag: "f6f1-65b973f67dc71"
+accept-ranges: bytes
+content-length: 63217
+cache-control: max-age=1784, public, public
+expires: Wed, 16 Sep 2026 11:37:02 GMT
+vary: Accept-Encoding,Cookie,User-Agent
+referrer-policy: no-referrer-when-downgrade
+x-powered-by: W3 Total Cache
+pragma: public
+content-type: text/html; charset=UTF-8
+date: Wed, 16 Sep 2026 11:07:18 GMT
+server: Apache
+
