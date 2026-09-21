@@ -1,56 +1,77 @@
-// require() is used to import functions from our other files (modules)
-const { getCategoryUrls } = require('./src/sitemap');
-const { scrapeCategory } = require('./src/scraper');
+// Built-in Node.js modules to interact with file system and paths
+const fs = require('fs');
+const path = require('path');
+// Import our exporter module that saves products to CSV and Excel
 const { exportData } = require('./src/exporter');
 
-// The main function is declared 'async' because we need to wait (await) for network requests to finish
+/**
+ * Main Orchestrator for Multi-Website Scraper
+ * 
+ * Rules enforced:
+ * 1. Each website is scraped separately.
+ * 2. All products from one website are stored in ONE CSV file and ONE Excel file inside `data/`.
+ * 3. Filename is automatically generated based on the website name / domain.
+ * 4. Websites do not overwrite each other's files.
+ */
 async function main() {
-    console.log("Starting Natuerlich-fuer-uns Data Scraper...");
-    
+    console.log("=========================================");
+    console.log("   MULTI-WEBSITE DATA SCRAPER ENGINE     ");
+    console.log("=========================================\n");
+
+    const sitesDir = path.join(__dirname, 'src', 'sites');
+
+    // Read command-line arguments (e.g. `node index.js natuerlich-fuer-uns`)
+    const targetSiteArg = process.argv[2] ? process.argv[2].toLowerCase().trim() : null;
+
     try {
-        // Step 1: Get all the category URLs from the sitemap
-        const categoryUrls = await getCategoryUrls();
-        console.log(`Discovered ${categoryUrls.length} category URLs to scrape.`);
-        
-        // This array will hold all the final products we collect
-        let allProducts = [];
-        
-        // A 'Set' is a special data structure that only stores unique values.
-        // We use it here to remember which products we've already seen, to avoid duplicates.
-        let uniqueProductKeys = new Set();
-        
-        // Step 2: Loop through every category URL one by one
-        for (let i = 0; i < categoryUrls.length; i++) {
-            const url = categoryUrls[i];
-            console.log(`\n[${i+1}/${categoryUrls.length}] Processing ${url}...`);
-            
-            // Wait for the scraper to finish downloading and extracting products from this category
-            const products = await scrapeCategory(url);
-            
-            // Step 3: Deduplicate (remove duplicates) across categories
-            // Sometimes one product (like an apple) is in "Fruits" and "Vegan" categories.
-            for (const p of products) {
-                // Create a unique key by combining the name and category
-                const key = p.name.toLowerCase() + '-' + p.category;
-                
-                // If we haven't seen this key before, add it to our Set and save the product
-                if (!uniqueProductKeys.has(key)) {
-                    uniqueProductKeys.add(key);
-                    allProducts.push(p);
-                }
-            }
+        // Find all site modules in `src/sites/` (excluding .example files)
+        const siteFiles = fs.readdirSync(sitesDir).filter(file => 
+            (file.endsWith('.js') || file.endsWith('.cjs')) && !file.endsWith('.example')
+        );
+
+        if (siteFiles.length === 0) {
+            console.error("No website scrapers found in src/sites/");
+            return;
         }
-        
-        // Step 4: Scraping is done! Now export the collected products
-        console.log(`\nScraping complete. Collected ${allProducts.length} unique products.`);
-        await exportData(allProducts);
-        
-        console.log("All done!");
+
+        console.log(`Found ${siteFiles.length} website scraper module(s): ${siteFiles.join(', ')}\n`);
+
+        // Loop over each registered site scraper module
+        for (const file of siteFiles) {
+            const sitePath = path.join(sitesDir, file);
+            const siteModule = require(sitePath);
+
+            const siteName = siteModule.siteName || file.replace(/\.js$/, '');
+            const siteSlug = siteModule.siteSlug || siteName;
+
+            // If a specific site argument was passed, filter by that site
+            if (targetSiteArg && !siteSlug.toLowerCase().includes(targetSiteArg) && !siteName.toLowerCase().includes(targetSiteArg)) {
+                continue;
+            }
+
+            console.log(`>>> Starting scrape job for: ${siteName} <<<`);
+            
+            // 1. Run the website-specific scraper module to collect products
+            const products = await siteModule.run();
+
+            // 2. Export collected products to website-specific CSV and Excel files in data/
+            if (products && products.length > 0) {
+                await exportData(siteSlug, products);
+            } else {
+                console.log(`No products collected for ${siteName}. Skipping export.`);
+            }
+
+            console.log(`\n>>> Completed scrape job for: ${siteName} <<<\n`);
+        }
+
+        console.log("=========================================");
+        console.log("   ALL SCRAPING JOBS COMPLETED SUCCESSFULLY");
+        console.log("=========================================");
+
     } catch (error) {
-        // If anything goes completely wrong (like the internet dies), catch the error here and print it
-        console.error("An error occurred during scraping:", error);
+        console.error("An error occurred during execution:", error);
     }
 }
 
-// Start the program by calling the main function
+// Execute main function
 main();

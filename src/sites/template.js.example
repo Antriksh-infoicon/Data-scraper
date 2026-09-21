@@ -1,0 +1,44 @@
+/**
+ * WEBSITE SCRAPER MODULE TEMPLATE
+ * 
+ * To add a new website to this scraper project:
+ * 1. Copy this file and rename it to your site (e.g., `biogast.js` or `myproduct.js`).
+ * 2. Update `siteName` and `siteSlug`.
+ * 3. Implement the `run()` function to scrape your target website and return an array of product objects.
+ * 
+ * Standard Product Object Format:
+ * {
+ *   name: "Product Name",
+ *   category: "Category Name",
+ *   price: "9.99 €" (if available),
+ *   description: "Product description..." (if available),
+ *   productUrl: "https://website.com/product/123",
+ *   imageUrl: "https://website.com/images/123.jpg",
+ *   sourceUrl: "https://website.com/category/abc"
+ * }
+ */
+
+const siteName = 'example-website.com';
+const siteSlug = 'example-website'; // Output filename will be `data/example-website.csv` and `data/example-website.xlsx`
+
+/**
+ * Main scraper function for this website.
+ * Must return an array of product objects.
+ */
+async function run() {
+    console.log(`=== Starting Scraper for Website: ${siteName} ===`);
+    
+    const products = [];
+    
+    // TODO: Add your scraping logic here (axios, cheerio, Playwright, API calls, etc.)
+    // Remember to remove duplicate products before returning!
+    
+    console.log(`=== Completed ${siteName}. Collected ${products.length} unique products. ===`);
+    return products;
+}
+
+module.exports = {
+    siteName,
+    siteSlug,
+    run
+};
