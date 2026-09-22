@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 // Import our exporter module that saves products to CSV and Excel
-const { exportData } = require('./src/exporter');
+const { exportData, exportFailedData } = require('./src/exporter');
 
 /**
  * Main Orchestrator for Multi-Website Scraper
@@ -52,13 +52,24 @@ async function main() {
             console.log(`>>> Starting scrape job for: ${siteName} <<<`);
             
             // 1. Run the website-specific scraper module to collect products
-            const products = await siteModule.run();
+            const result = await siteModule.run();
+
+            // Support site modules returning either an Array of products or an Object { products, failedRecords }
+            const products = Array.isArray(result) ? result : (result?.products || []);
+            const failedRecords = siteModule.getFailedRecords 
+                ? siteModule.getFailedRecords() 
+                : (result?.failedRecords || []);
 
             // 2. Export collected products to website-specific CSV and Excel files in data/
             if (products && products.length > 0) {
                 await exportData(siteSlug, products);
             } else {
-                console.log(`No products collected for ${siteName}. Skipping export.`);
+                console.log(`No successful products collected for ${siteName}. Skipping product export.`);
+            }
+
+            // 3. Export failure tracking report if failed records exist
+            if (failedRecords && failedRecords.length > 0) {
+                await exportFailedData(siteSlug, failedRecords);
             }
 
             console.log(`\n>>> Completed scrape job for: ${siteName} <<<\n`);
